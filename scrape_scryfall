@@ -1,0 +1,46 @@
+# import urllib2 using .request
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+import xlsxwriter
+
+# Download page
+quote_page = "https://scryfall.com/sets/war?order=set&as=text"
+page = urlopen(quote_page)
+soup = BeautifulSoup(page, "html.parser")
+
+# Prepare workbook
+workbook = xlsxwriter.Workbook('WAR_output.xlsx')
+worksheet = workbook.add_worksheet()
+row = 1
+col = 0
+
+# For each grid item
+for tag in soup.find_all("a", attrs={"class": "card-text text-grid-item"}):
+
+    # Extract data
+    card_name_box = tag.find("h6", attrs={"class": "card-text-title"}).text
+    card_type = tag.find("p", attrs={"class": "card-text-type-line"}).text
+    if tag.find("div", attrs={"class": "card-text-oracle"}) is not None:
+        card_text = tag.find("div", attrs={"class": "card-text-oracle"}).text
+    else:
+        card_text = "-"
+    if tag.find("div", attrs={"class": "card-text-stats"}) is not None:
+        card_stats = tag.find("div", attrs={"class": "card-text-stats"}).text
+    else:
+        card_stats = "-"
+
+    # Reformat data in card name box
+    card_name_split = card_name_box.split("{", 1)
+    card_name = card_name_split[0]
+    if len(card_name_split) > 1:
+        card_cost = "{" + card_name_split[1]
+    else:
+        card_cost = "0"
+
+    # Write to spreadsheet
+    worksheet.write(row, col, card_name.strip())
+    worksheet.write(row, col+1, card_cost.strip())
+    worksheet.write(row, col+2, card_type.strip())
+    worksheet.write(row, col+4, card_text)
+    worksheet.write(row, col+3, card_stats.strip())
+    row += 1
